@@ -1,0 +1,41 @@
+{
+    "manifest_version": 3,
+    "name": "Instroom.io",
+    "version": "1.0",
+    "description": "Tired of tracking influencer campaigns across endless spreadsheets? INSTROOM.io makes influencer management simple, efficient, and stress-free—all within your browser.",
+    "permissions": [
+      "activeTab",
+      "storage",
+      "scripting"
+    ],
+    "host_permissions": [
+      "https://instagram-scraper-api2.p.rapidapi.com/*"
+  ],
+    "action": {
+      "default_popup": "instroom.html",
+      "default_icon": {
+        "16": "images/Instroom Logo 16x16.png",
+        "48": "images/Instroom Logo 48x48.png",
+        "128": "images/Instroom Logo 128x128.png"
+      }
+    },
+    "background": {
+      "service_worker": "background.js"
+    },
+    "icons": {
+      "16": "images/Instroom Logo 16x16.png",
+      "48": "images/Instroom Logo 48x48.png",
+      "128": "images/Instroom Logo 128x128.png"
+    },
+    "content_scripts": [
+      {
+        "matches": [
+          "https://www.instagram.com/*"
+        ],
+        "js": [
+          "content.js"
+        ]
+      }
+    ]
+  }
+  

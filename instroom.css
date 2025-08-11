@@ -1,0 +1,57 @@
+body {
+    font-family: sans-serif;
+    width: 300px;
+    padding: 10px;
+    background-color: #f4f4f4;
+    color: #333;
+  }
+  
+  .container{
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 10px;
+  }
+  
+  .header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #ddd;
+  }
+  
+  .logo {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .title{
+    margin: 0;
+    font-size: 16px;
+  }
+  
+  .profile-info {
+    margin-top: 10px;
+  }
+  
+  .profile-info p {
+    margin: 5px 0;
+    font-size: 14px;
+  }
+  
+  .profile-info strong {
+    font-weight: bold;
+  }
+  
+  .error {
+    color: red;
+    font-size: 14px;
+  }
+  
+  .loading {
+    color: gray;
+    font-size: 14px;
+  }
+  

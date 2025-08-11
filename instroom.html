@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Instroom.io</title>
+  <link rel="stylesheet" href="instroom.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 class="title">Instroom</h1>
+    </div>
+
+    <div class="profile-info">
+      <div id="loading" class="loading">Loading...</div>
+      <div id="error" class="error"></div>
+      <div id="profile-data" style="display: none;">
+        <p><strong>Username:</strong> <span id="username"></span></p>
+        <p><strong>Email:</strong> <span id="email"></span></p>
+        <p><strong>DM Link:</strong> <a id="dm-link" href="" target="_blank">Send DM</a></p>
+        <p><strong>Followers:</strong> <span id="followers"></span></p>
+        <p><strong>Account Location:</strong> <span id="country"></span></p>
+        <p><strong>Engagement Rate:</strong> <span id="engagement-rate"></span></p>
+        <p><strong>Total Likes (Last 12 Posts):</strong> <span id="total-likes"></span></p>
+        <p><strong>Total Comments (Last 12 Posts):</strong> <span id="total-comments"></span></p>
+        <p><strong>Average Likes (Last 12 Posts):</strong> <span id="average-likes"></span></p>
+        <p><strong>Average Comments (Last 12 Posts):</strong> <span id="average-comments"></span></p>
+      </div>
+    </div>
+  </div> 
+  <script src="instroom.js"></script>
+</body>
+</html>
