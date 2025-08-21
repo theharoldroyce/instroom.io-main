@@ -9,7 +9,7 @@
       "scripting"
     ],
     "host_permissions": [
-      "https://instagram-scraper-api2.p.rapidapi.com/*"
+      "https://instagram-social-api.p.rapidapi.com/*"
   ],
     "action": {
       "default_popup": "instroom.html",
