@@ -5,12 +5,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const profileDataDiv = document.getElementById("profile-data");
   const usernameSpan = document.getElementById("username");
   const emailSpan = document.getElementById("email");
-  const dmLinkA = document.getElementById("dm-link");
   const followersSpan = document.getElementById("followers");
   const locationSpan = document.getElementById("country");
   const engagementRateSpan = document.getElementById("engagement-rate");
-  const totalLikesSpan = document.getElementById("total-likes");
-  const totalCommentsSpan = document.getElementById("total-comments");
+  const averageLikesSpan = document.getElementById("average-likes");
+  const averageCommentsSpan = document.getElementById("average-comments");
 
   let followersCountForEngagement = null; // Store followers count for engagement calculation
 
@@ -20,8 +19,6 @@ document.addEventListener("DOMContentLoaded", () => {
     profileDataDiv.style.display = "block";
     usernameSpan.textContent = data.username || "N/A";
     emailSpan.textContent = data.email || "N/A";
-    dmLinkA.href = `https://ig.me/m/${data.username}`;
-    dmLinkA.style.display = data.username ? "inline-block" : "none";
     followersSpan.textContent = data.followers_count || "N/A";
     locationSpan.textContent = data.location || "N/A";
     engagementRateSpan.textContent = data.engagement_rate || "N/A";
@@ -39,40 +36,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function displayPostStats(data) {
-    totalLikesSpan.textContent = data.totalLikes !== undefined ? data.totalLikes.toLocaleString() : "N/A";
-    totalCommentsSpan.textContent = data.totalComments !== undefined ? data.totalComments.toLocaleString() : "N/A";
-
-    // Calculate and display engagement rate
-    if (
-      typeof data.totalLikes === "number" &&
-      typeof data.totalComments === "number" &&
-      followersCountForEngagement &&
-      followersCountForEngagement > 0
-    ) {
-      const engagementRate = ((data.totalLikes + data.totalComments) / followersCountForEngagement) * 100;
-      engagementRateSpan.textContent = engagementRate.toFixed(2) + "%";
-    }
-  }
-
-//   function displayPostStats(data) {
-//   totalLikesSpan.textContent = data.totalLikes !== undefined ? data.totalLikes.toLocaleString() : "N/A";
-//   totalCommentsSpan.textContent = data.totalComments !== undefined ? data.totalComments.toLocaleString() : "N/A";
-
-//   // Calculate and display engagement rate using the new formula
-//   const POST_COUNT = 12;
-//   if (
-//     typeof data.totalLikes === "number" &&
-//     typeof data.totalComments === "number" &&
-//     followersCountForEngagement &&
-//     followersCountForEngagement > 0
-//   ) {
-//     const avgEngagement = (data.totalLikes + data.totalComments) / POST_COUNT;
-//     const engagementRate = (avgEngagement / followersCountForEngagement) * 100;
-//     engagementRateSpan.textContent = engagementRate.toFixed(2) + "%";
-//   }
-// }
-
 function displayPostStats(data) {
   const POST_COUNT = 12;
   // Calculate averages
@@ -86,10 +49,8 @@ function displayPostStats(data) {
     avgComments = (data.totalComments / POST_COUNT).toFixed(2);
   }
 
-  totalLikesSpan.textContent = data.totalLikes !== undefined ? data.totalLikes.toLocaleString() : "N/A";
-  totalCommentsSpan.textContent = data.totalComments !== undefined ? data.totalComments.toLocaleString() : "N/A";
-  document.getElementById("average-likes").textContent = avgLikes;
-  document.getElementById("average-comments").textContent = avgComments;
+  averageLikesSpan.textContent = avgLikes;
+  averageCommentsSpan.textContent = avgComments;
 
   // Engagement rate calculation (as previously discussed)
   if (

@@ -12,42 +12,46 @@
   <body>
     <div class="container">
       <div class="header">
+        <img src="images/Instroom Logo 16x16.png" alt="Instroom Logo" class="logo" />
         <h1 class="title">Instroom</h1>
       </div>
 
-      <div class="profile-info">
+      <div class="profile-section">
         <div id="loading" class="loading">Loading...</div>
         <div id="error" class="error"></div>
-          <div id="profile-data" style="display: none">
-            <p><strong>Username:</strong> <span id="username"></span></p>
-            <p><strong>Email:</strong> <span id="email"></span></p>
-            <p>
-              <strong>DM Link:</strong>
-              <a id="dm-link" href="" target="_blank">Send DM</a>
-            </p>
-            <p><strong>Followers:</strong> <span id="followers"></span></p>
-            <p><strong>Account Location:</strong> <span id="country"></span></p>
-            <p>
-              <strong>Engagement Rate:</strong>
-              <span id="engagement-rate"></span>
-            </p>
-            <p style="display:none;">
-              <strong>Total Likes (Last 12 Posts):</strong>
-              <span id="total-likes"></span>
-            </p>
-            <p style="display:none;">
-              <strong>Total Comments (Last 12 Posts):</strong>
-              <span id="total-comments"></span>
-            </p>
-            <p style="display:none;">
-              <strong>Average Likes (Last 12 Posts):</strong>
-              <span id="average-likes"></span>
-            </p>
-            <p style="display:none;">
-              <strong>Average Comments (Last 12 Posts):</strong>
-              <span id="average-comments"></span>
-            </p>
+        <div id="profile-data" style="display: none">
+          <div class="profile-header">
+            <img src="images/instroomLogo.png" alt="Profile Picture" class="profile-pic" />
+            <div class="profile-text">
+              <p class="username" id="username"></p>
+              <p class="email" id="email"></p>
+            </div>
           </div>
+
+          <div class="metrics-list">
+            <div class="metric-item">
+              <span class="metric-label">Followers</span>
+              <span class="metric-value" id="followers"></span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Engagement Rate</span>
+              <span class="metric-value" id="engagement-rate"></span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Avg. Likes</span>
+              <span class="metric-value" id="average-likes"></span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Avg. Comments</span>
+              <span class="metric-value" id="average-comments"></span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Location</span>
+              <span class="metric-value" id="country"></span>
+            </div>
+          </div>
+        </div>
+      </div>
       </div>
     </div>
 
