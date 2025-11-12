@@ -10,6 +10,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const engagementRateSpan = document.getElementById("engagement-rate");
   const averageLikesSpan = document.getElementById("average-likes");
   const averageCommentsSpan = document.getElementById("average-comments");
+  const remainingCreditsSpan = document.getElementById("remaining-credits");
+  const profileSection = document.querySelector(".profile-section");
 
   let followersCountForEngagement = null; // Store followers count for engagement calculation
 
@@ -71,9 +73,17 @@ function displayPostStats(data) {
     errorDiv.style.display = "block";
   }
 
-  // Send a message to the content script to get the URL.
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.tabs.sendMessage(tabs[0].id, { message: "get_profile_url" });
+  // On popup open, get credits and then trigger profile data fetch
+  chrome.storage.local.get(["usageCount", "lastReset"], (result) => {
+    const MAX_USAGE = 10;
+    let usageCount = result.usageCount || 0;
+    const remaining = MAX_USAGE - usageCount;
+    remainingCreditsSpan.textContent = remaining;
+
+    // Now, send a message to the content script to get the URL.
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, { message: "get_profile_url" });
+    });
   });
 
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -86,6 +96,19 @@ function displayPostStats(data) {
     } else if (request.message === "post_stats_error") {
       console.error("Error fetching post stats:", request.error);
       displayPostStats({ totalLikes: "Error", totalComments: "Error" });
+    } else if (request.message === "usage_limit_reached") {
+      displayError(request.error);
+      profileSection.innerHTML = `
+        <div class="no-credits-message">
+          <p>You've reached your monthly credit limit. To continue using all features, please upgrade your plan:</p>
+          <a href="https://instroom-landing-page.vercel.app/" target="_blank">Subscribe</a>
+        </div>
+      `;
+      // Optionally, hide the profile data section
+      profileDataDiv.style.display = "none";
+
+    } else if (request.message === "remaining_credits") {
+      remainingCreditsSpan.textContent = request.remaining;
     }
   });
 });
