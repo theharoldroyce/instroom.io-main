@@ -12,10 +12,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const averageCommentsSpan = document.getElementById("average-comments");
   const remainingCreditsSpan = document.getElementById("remaining-credits");
   const profileSection = document.querySelector(".profile-section");
+  const profilePicImg = document.getElementById("profile-pic");
 
   let followersCountForEngagement = null; // Store followers count for engagement calculation
 
   function displayProfileData(data) {
+    console.log("Full data object received in popup:", data);
 
     loadingDiv.style.display = "none";
     profileDataDiv.style.display = "block";
@@ -24,9 +26,19 @@ document.addEventListener("DOMContentLoaded", () => {
     followersSpan.textContent = data.followers_count || "N/A";
     locationSpan.textContent = data.location || "N/A";
     engagementRateSpan.textContent = data.engagement_rate || "N/A";
-
+    
+    console.log("profilePicUrl in popup:", data.profilePicUrl);
+    if (data.profilePicUrl) {
+      profilePicImg.src = data.profilePicUrl;
+    } else {
+      profilePicImg.src = "images/instroomLogo.png"; // Fallback to default logo
+    }
   
     // Store followers count for engagement rate calculation
+    profilePicImg.onerror = () => {
+      console.error("Failed to load image:", profilePicImg.src);
+    };
+
     followersCountForEngagement = parseInt(
       (data.followers_count || "0").toString().replace(/,/g, ""),
       10

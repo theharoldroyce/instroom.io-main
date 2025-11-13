@@ -6,11 +6,15 @@
     "permissions": [
       "activeTab",
       "storage",
-      "scripting"
+      "scripting",
+      "declarativeNetRequest",
+      "declarativeNetRequestWithHostAccess"
     ],
     "host_permissions": [
-      "https://instagram-social-api.p.rapidapi.com/*"
-  ],
+      "https://instagram-social-api.p.rapidapi.com/*",
+      "https://*.cdninstagram.com/*",
+      "https://*.fbcdn.net/*"
+    ],
     "action": {
       "default_popup": "instroom.html",
       "default_icon": {
@@ -21,6 +25,15 @@
     },
     "background": {
       "service_worker": "background.js"
+    },
+    "declarative_net_request": {
+      "rule_resources": [
+        {
+          "id": "ruleset_1",
+          "enabled": true,
+          "path": "rules_1.json"
+        }
+      ]
     },
     "icons": {
       "16": "images/Instroom Logo 16x16.png",
@@ -36,6 +49,9 @@
           "content.js"
         ]
       }
-    ]
+    ],
+    "content_security_policy": {
+      "extension_pages": "script-src 'self'; object-src 'self'; img-src 'self' data: blob: https:;"
+    }
   }
   

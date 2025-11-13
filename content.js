@@ -3,10 +3,12 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.message === "get_profile_url") {
       const profileUrl = window.location.href;
+      const profilePicUrl = getProfilePicUrlFromPage();
       const userId = getUserIdFromPage();
       chrome.runtime.sendMessage({
         message: "profile_url",
         url: profileUrl,
+        profilePicUrl: profilePicUrl,
         userId: userId,
       });
     }
@@ -24,6 +26,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
     } catch (e) {
       console.error("Error extracting user ID:", e);
+    }
+    return null;
+  }
+
+  function getProfilePicUrlFromPage() {
+    try {
+      // This selector targets the main profile image on an Instagram profile page.
+      // It's more robust than a very specific path.
+      const imgElement = document.querySelector('main header img');
+      if (imgElement) {
+        return imgElement.src;
+      }
+    } catch (e) {
+      console.error("Error extracting profile picture URL:", e);
     }
     return null;
   }
