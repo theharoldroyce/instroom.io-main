@@ -46,6 +46,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // After displaying profile data, request post stats
     if (data.username) {
+      // Add spinner before fetching post stats
+      const spinnerHtml = '<div class="spinner"></div>';
+      engagementRateSpan.innerHTML = spinnerHtml;
+      averageLikesSpan.innerHTML = spinnerHtml;
+      averageCommentsSpan.innerHTML = spinnerHtml;
+
       chrome.runtime.sendMessage({ message: "get_post_stats", username: data.username });
     }
   }
