@@ -10,11 +10,28 @@ document.addEventListener("DOMContentLoaded", () => {
   const engagementRateSpan = document.getElementById("engagement-rate");
   const averageLikesSpan = document.getElementById("average-likes");
   const averageCommentsSpan = document.getElementById("average-comments");
+  const averageReelPlaysSpan = document.getElementById("average-reel-plays");
   const remainingCreditsSpan = document.getElementById("remaining-credits");
   const profileSection = document.querySelector(".profile-section");
   const profilePicImg = document.getElementById("profile-pic");
 
   let followersCountForEngagement = null; // Store followers count for engagement calculation
+
+  function formatNumber(num) {
+    if (typeof num !== 'number' || isNaN(num)) {
+      return "N/A";
+    }
+    if (num < 1000) {
+      return num.toString();
+    }
+    if (num < 1000000) {
+      return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+    }
+    if (num < 1000000000) {
+      return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+    }
+    return (num / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';
+  }
 
   function displayProfileData(data) {
     console.log("Full data object received in popup:", data);
@@ -23,7 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
     profileDataDiv.style.display = "block";
     usernameSpan.textContent = data.username || "N/A";
     emailSpan.textContent = data.email || "N/A";
-    followersSpan.textContent = data.followers_count || "N/A";
+    followersSpan.textContent = formatNumber(data.followers_count);
     locationSpan.textContent = data.location || "N/A";
     engagementRateSpan.textContent = data.engagement_rate || "N/A";
     
@@ -51,8 +68,10 @@ document.addEventListener("DOMContentLoaded", () => {
       engagementRateSpan.innerHTML = spinnerHtml;
       averageLikesSpan.innerHTML = spinnerHtml;
       averageCommentsSpan.innerHTML = spinnerHtml;
+      averageReelPlaysSpan.innerHTML = spinnerHtml;
 
       chrome.runtime.sendMessage({ message: "get_post_stats", username: data.username });
+      chrome.runtime.sendMessage({ message: "get_reels_stats", username: data.username });
     }
   }
 
@@ -65,8 +84,8 @@ function displayPostStats(data) {
     typeof data.totalLikes === "number" &&
     typeof data.totalComments === "number"
   ) {
-    avgLikes = (data.totalLikes / POST_COUNT).toFixed(2);
-    avgComments = (data.totalComments / POST_COUNT).toFixed(2);
+    avgLikes = formatNumber(Math.round(data.totalLikes / POST_COUNT));
+    avgComments = formatNumber(Math.round(data.totalComments / POST_COUNT));
   }
 
   averageLikesSpan.textContent = avgLikes;
@@ -84,6 +103,15 @@ function displayPostStats(data) {
     engagementRateSpan.textContent = engagementRate.toFixed(2) + "%";
   }
 }
+
+  function displayReelsStats(data) {
+    if (data.averagePlays) {
+      // Use toLocaleString() to format the number with commas
+      averageReelPlaysSpan.textContent = formatNumber(parseInt(data.averagePlays, 10));
+    } else {
+      averageReelPlaysSpan.textContent = "N/A";
+    }
+  }
 
   function displayError(message) {
     loadingDiv.style.display = "none";
@@ -113,7 +141,11 @@ function displayPostStats(data) {
       displayPostStats(request.data);
     } else if (request.message === "post_stats_error") {
       console.error("Error fetching post stats:", request.error);
+      // Also handle reels error display
+      displayReelsStats({ averagePlays: "Error" });
       displayPostStats({ totalLikes: "Error", totalComments: "Error" });
+    } else if (request.message === "reels_stats_data") {
+      displayReelsStats(request.data);
     } else if (request.message === "usage_limit_reached") {
       displayError(request.error);
       profileSection.innerHTML = `
