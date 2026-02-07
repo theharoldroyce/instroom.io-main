@@ -80,8 +80,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     let iframe = document.getElementById(iframeId);
 
     if (iframe) {
-        // If it exists, reload it
-        iframe.contentWindow.location.reload();
+        // If it exists, refresh it via message
+        iframe.contentWindow.postMessage({ type: "refresh_sidebar" }, "*");
     } else {
         // If it doesn't exist, create it
         iframe = document.createElement("iframe");
