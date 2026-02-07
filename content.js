@@ -11,8 +11,44 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         profilePicUrl: profilePicUrl,
         userId: userId,
       });
+    } else if (request.message === "toggle_sidebar") {
+      toggleSidebar();
     }
   });
+
+  window.addEventListener("message", (event) => {
+    if (event.data && event.data.type === "resize_sidebar") {
+      const iframe = document.getElementById("instroom-sidebar-frame");
+      if (iframe) {
+        iframe.style.height = event.data.height + "px";
+      }
+    }
+  });
+
+  function toggleSidebar() {
+    const iframeId = "instroom-sidebar-frame";
+    const existingIframe = document.getElementById(iframeId);
+
+    if (existingIframe) {
+      existingIframe.remove();
+    } else {
+      const iframe = document.createElement("iframe");
+      iframe.id = iframeId;
+      iframe.src = chrome.runtime.getURL("instroom.html");
+      iframe.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 400px;
+        height: 650px;
+        border: none;
+        z-index: 2147483647;
+        border-radius: 16px;
+        background: transparent;
+      `;
+      document.body.appendChild(iframe);
+    }
+  }
   
   function getUserIdFromPage() {
     try {

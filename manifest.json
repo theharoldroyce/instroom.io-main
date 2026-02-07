@@ -16,7 +16,6 @@
       "https://*.fbcdn.net/*"
     ],
     "action": {
-      "default_popup": "instroom.html",
       "default_icon": {
         "16": "images/Instroom Logo 16x16.png",
         "48": "images/Instroom Logo 48x48.png",
@@ -35,6 +34,12 @@
         }
       ]
     },
+    "web_accessible_resources": [
+      {
+        "resources": ["instroom.html", "instroom.css", "instroom.js", "images/*"],
+        "matches": ["<all_urls>"]
+      }
+    ],
     "icons": {
       "16": "images/Instroom Logo 16x16.png",
       "48": "images/Instroom Logo 48x48.png",

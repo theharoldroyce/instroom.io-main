@@ -161,4 +161,10 @@ function displayPostStats(data) {
       remainingCreditsSpan.textContent = request.remaining;
     }
   });
+
+  const resizeObserver = new ResizeObserver(() => {
+    const height = document.body.scrollHeight;
+    window.parent.postMessage({ type: "resize_sidebar", height: height }, "*");
+  });
+  resizeObserver.observe(document.body);
 });

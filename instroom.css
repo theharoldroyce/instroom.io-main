@@ -15,19 +15,28 @@
     font-family: Inter, system-ui, sans-serif;
 }
 
-body {
+html, body {
     margin: 0;
-    background: var(--bg);
-    color: var(--text);
+    padding: 0;
+    /* This makes the white area match your popup's background */
+    background: transparent; 
+    /* This removes the scrollbar */
+    overflow: hidden; 
+    /* This forces the window to wrap tightly around your 400px card */
+    width: 400px;
+    height: auto;
 }
 
-/* wrapper */
+/* Ensure the container has no extra margin pushing it away */
 .popup-container {
     background: var(--card);
     border-radius: var(--radius);
     padding: 22px;
-    width: 380px;
+    width: 400px; /* This must match the body width above */
+    height: auto;
     box-shadow: var(--shadow);
+    box-sizing: border-box;
+    display: block;
 }
 
 /* HEADER */
