@@ -5,6 +5,15 @@ const RAPIDAPI_KEY = "afc08d77a3msha9dbce2c87bd4d4p1c4c64jsn5dacbf93e3eb"; // Re
 const RAPIDAPI_HOST = "instagram-social-api.p.rapidapi.com";
 let currentUserId = null;
 
+// Listen for URL updates to handle navigation
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.url) {
+    chrome.tabs.sendMessage(tabId, { message: "url_changed", url: changeInfo.url }, () => {
+      chrome.runtime.lastError; // Suppress error if content script not ready
+    });
+  }
+});
+
 // Handle extension icon click to toggle the sidebar
 chrome.action.onClicked.addListener((tab) => {
   if (tab.id) {

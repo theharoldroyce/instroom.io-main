@@ -12,7 +12,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         userId: userId,
       });
     } else if (request.message === "toggle_sidebar") {
-      toggleSidebar();
+      if (isProfilePage()) {
+        toggleSidebar();
+      } else {
+        closeSidebar();
+      }
+    } else if (request.message === "url_changed") {
+      if (!isProfilePage()) {
+        closeSidebar();
+      }
     }
   });
 
@@ -24,6 +32,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
     }
   });
+
+  function closeSidebar() {
+    const iframeId = "instroom-sidebar-frame";
+    const existingIframe = document.getElementById(iframeId);
+    if (existingIframe) {
+      existingIframe.remove();
+    }
+  }
 
   function toggleSidebar() {
     const iframeId = "instroom-sidebar-frame";
@@ -64,6 +80,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       console.error("Error extracting user ID:", e);
     }
     return null;
+  }
+
+  function isProfilePage() {
+    const path = window.location.pathname;
+    const segments = path.split('/').filter(segment => segment.length > 0);
+    
+    if (segments.length === 0) return false; // Root path
+    
+    const reservedWords = ['home', 'explore', 'reels', 'stories', 'p', 'tv', 'direct', 'accounts', 'developer', 'about', 'legal', 'create', 'saved', 'api'];
+    
+    if (reservedWords.includes(segments[0].toLowerCase())) {
+      return false;
+    }
+    
+    return true;
   }
 
   function getProfilePicUrlFromPage() {
