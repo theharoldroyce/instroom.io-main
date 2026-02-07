@@ -3,6 +3,8 @@
 // background.js
 const RAPIDAPI_KEY = "afc08d77a3msha9dbce2c87bd4d4p1c4c64jsn5dacbf93e3eb"; // Replace with your actual RapidAPI key
 const RAPIDAPI_HOST = "instagram-social-api.p.rapidapi.com";
+
+const TIKTOK_API_HOST = "tiktok-api23.p.rapidapi.com"; 
 let currentUserId = null;
 
 // Listen for URL updates to handle navigation
@@ -56,9 +58,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { // Mak
         currentUserId = request.userId; // Store user ID from content script
 
         if (username) {
-          fetchProfileData(username, request.profilePicUrl); // Pass the direct image URL
-          fetchPostStats(username);
-          fetchReelsStats(username);
+          if (profileUrl.includes("tiktok.com")) {
+            fetchTikTokProfileData(username, request.profilePicUrl);
+            fetchTikTokPostStats(username);
+            // TikTok is all video, so we can map reels stats to the same data or a specific endpoint
+            fetchTikTokReelsStats(username);
+          } else {
+            fetchProfileData(username, request.profilePicUrl); // Pass the direct image URL
+            fetchPostStats(username);
+            fetchReelsStats(username);
+          }
         } else {
           console.error("Invalid profile URL:", profileUrl);
           chrome.runtime.sendMessage({
@@ -97,6 +106,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { // Mak
 
 function extractUsernameFromUrl(profileUrl) {
   const parts = profileUrl.split("/");
+  // Handle TikTok: https://www.tiktok.com/@username
+  if (profileUrl.includes("tiktok.com") && parts.length >= 4) {
+    const segment = parts[3].trim();
+    return segment.startsWith('@') ? segment.substring(1) : segment;
+  }
   if (parts.length >= 4) {
     return parts[3].trim(); // Trim to remove leading/trailing spaces
   }
@@ -321,6 +335,111 @@ function extractProfileData(infoData, aboutData) {
     };
   } else {
     return {};
+  }
+}
+
+// --- TIKTOK FUNCTIONS ---
+
+async function fetchTikTokProfileData(username, directProfilePicUrl) {
+  const url = `https://${TIKTOK_API_HOST}/api/user/info?uniqueId=${username}`;
+  
+  const options = {
+    method: "GET",
+    headers: {
+      "x-rapidapi-key": RAPIDAPI_KEY,
+      "x-rapidapi-host": TIKTOK_API_HOST,
+    },
+  };
+
+  try {
+    const response = await fetch(url, options);
+    if (!response.ok) throw new Error(`TikTok API request failed: ${response.status}`);
+    
+    const result = await response.json();
+    const userInfo = result.userInfo;
+    const user = userInfo?.user;
+    const stats = userInfo?.stats;
+
+    if (!user || !stats) throw new Error("Invalid TikTok API response structure");
+    
+    const profileData = {
+      username: user.uniqueId || username,
+      email: "N/A", // TikTok API rarely provides email
+      followers_count: stats.followerCount || 0,
+      location: "N/A",
+      engagement_rate: "Loading...",
+      profilePicUrl: directProfilePicUrl || user.avatarLarger || user.avatarMedium
+    };
+
+    chrome.runtime.sendMessage({ 
+      message: "profile_data", 
+      data: { ...profileData, profileUrl: `https://www.tiktok.com/@${username}` } 
+    });
+
+  } catch (error) {
+    console.error("Error fetching TikTok profile:", error);
+    chrome.runtime.sendMessage({ message: "profile_data_error", error: "Failed to fetch TikTok data." });
+  }
+}
+
+async function fetchTikTokPostStats(username) {
+  const url = `https://${TIKTOK_API_HOST}/api/user/posts?uniqueId=${username}&count=12`;
+  const options = {
+    method: "GET",
+    headers: { "x-rapidapi-key": RAPIDAPI_KEY, "x-rapidapi-host": TIKTOK_API_HOST },
+  };
+
+  try {
+    const response = await fetch(url, options);
+    if (!response.ok) throw new Error(`TikTok Posts API failed: ${response.status}`);
+    const result = await response.json();
+
+    const posts = result.itemList || [];
+    const recentPosts = posts.slice(0, 12);
+
+    const totalLikes = recentPosts.reduce((sum, post) => sum + (post.stats?.diggCount || 0), 0);
+    const totalComments = recentPosts.reduce((sum, post) => sum + (post.stats?.commentCount || 0), 0);
+
+    chrome.runtime.sendMessage({
+      message: "post_stats_data",
+      data: { totalLikes, totalComments },
+    });
+  } catch (error) {
+    console.error("Error fetching TikTok posts:", error);
+    chrome.runtime.sendMessage({ message: "post_stats_error", error: "Failed to fetch TikTok stats." });
+  }
+}
+
+async function fetchTikTokReelsStats(username) {
+  // TikTok is video-first, so this might be redundant or use the same endpoint as posts
+  // We will calculate average views (plays) here
+  const url = `https://${TIKTOK_API_HOST}/api/user/posts?uniqueId=${username}&count=12`;
+  const options = {
+    method: "GET",
+    headers: { "x-rapidapi-key": RAPIDAPI_KEY, "x-rapidapi-host": TIKTOK_API_HOST },
+  };
+
+  try {
+    const response = await fetch(url, options);
+    if (!response.ok) throw new Error(`TikTok Reels API failed: ${response.status}`);
+    const result = await response.json();
+
+    const videos = result.itemList || [];
+    
+    // Filter logic similar to Instagram (remove pinned if possible, etc)
+    // For now, just take recent videos
+    const recentVideos = videos.slice(0, 12);
+    
+    const totalPlays = recentVideos.reduce((sum, video) => sum + (video.stats?.playCount || 0), 0);
+    const averagePlays = recentVideos.length > 0 ? (totalPlays / recentVideos.length) : 0;
+
+    chrome.runtime.sendMessage({ 
+      message: "reels_stats_data", 
+      data: { averagePlays: averagePlays.toFixed(0) } 
+    });
+  } catch (error) {
+    console.error("Error fetching TikTok views:", error);
+    chrome.runtime.sendMessage({ message: "reels_stats_error", error: "Failed to fetch TikTok views." });
   }
 }
 // add to github

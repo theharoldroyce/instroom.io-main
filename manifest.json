@@ -13,7 +13,8 @@
     "host_permissions": [
       "https://instagram-social-api.p.rapidapi.com/*",
       "https://*.cdninstagram.com/*",
-      "https://*.fbcdn.net/*"
+      "https://*.fbcdn.net/*",
+      "https://tiktok-api23.p.rapidapi.com/*"
     ],
     "action": {
       "default_icon": {
@@ -48,7 +49,8 @@
     "content_scripts": [
       {
         "matches": [
-          "https://www.instagram.com/*"
+          "https://www.instagram.com/*",
+          "https://www.tiktok.com/*"
         ],
         "js": [
           "content.js"
