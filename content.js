@@ -50,6 +50,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       })();
       return true; // Indicates that the response is sent asynchronously
     }
+    if (request.message === "url_changed") {
+      if (lastUrl !== request.url) {
+        lastUrl = request.url;
+        handlePageChange();
+      }
+    }
   });
 
   window.addEventListener("message", (event) => {
@@ -123,7 +129,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const path = window.location.pathname;
     const segments = path.split('/').filter(segment => segment.length > 0);
     if (segments.length === 1) {
-        const reservedWords = ['home', 'explore', 'reels', 'stories', 'p', 'tv', 'direct', 'accounts', 'developer', 'about', 'legal', 'create', 'saved', 'api'];
+        const reservedWords = ['home', 'explore', 'reels', 'stories', 'p', 'tv', 'direct', 'accounts', 'developer', 'about', 'legal', 'create', 'saved', 'api', 'search'];
         if (!reservedWords.includes(segments[0].toLowerCase())) {
             return segments[0];
         }
@@ -155,7 +161,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       return false;
     }
     
-    const reservedWords = ['home', 'explore', 'reels', 'stories', 'p', 'tv', 'direct', 'accounts', 'developer', 'about', 'legal', 'create', 'saved', 'api'];
+    const reservedWords = ['home', 'explore', 'reels', 'stories', 'p', 'tv', 'direct', 'accounts', 'developer', 'about', 'legal', 'create', 'saved', 'api', 'search'];
     
     if (reservedWords.includes(segments[0].toLowerCase())) {
       return false;

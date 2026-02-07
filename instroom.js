@@ -112,6 +112,24 @@ function displayPostStats(data) {
     errorDiv.style.display = "block";
   }
 
+  window.addEventListener("message", (event) => {
+    if (event.data && event.data.type === "refresh_sidebar") {
+      loadingDiv.style.display = "block";
+      profileDataDiv.style.display = "none";
+      errorDiv.style.display = "none";
+
+      const spinnerHtml = '<div class="spinner"></div>';
+      engagementRateSpan.innerHTML = spinnerHtml;
+      averageLikesSpan.innerHTML = spinnerHtml;
+      averageCommentsSpan.innerHTML = spinnerHtml;
+      averageReelPlaysSpan.innerHTML = spinnerHtml;
+
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.tabs.sendMessage(tabs[0].id, { message: "get_profile_url" });
+      });
+    }
+  });
+
   // On popup open, get credits and then trigger profile data fetch
   chrome.storage.local.get(["usageCount", "lastReset"], (result) => {
     const MAX_USAGE = 10;
