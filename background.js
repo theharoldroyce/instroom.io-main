@@ -57,6 +57,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { // Mak
 
         if (username) {
           fetchProfileData(username, request.profilePicUrl); // Pass the direct image URL
+          fetchPostStats(username);
+          fetchReelsStats(username);
         } else {
           console.error("Invalid profile URL:", profileUrl);
           chrome.runtime.sendMessage({

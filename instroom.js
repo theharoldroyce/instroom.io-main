@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const profilePicImg = document.getElementById("profile-pic");
 
   let followersCountForEngagement = null; // Store followers count for engagement calculation
+  let cachedPostStats = null; // Store post stats if they arrive before profile data
 
   function formatNumber(num) {
     if (typeof num !== 'number' || isNaN(num)) {
@@ -60,22 +61,14 @@ document.addEventListener("DOMContentLoaded", () => {
       (data.followers_count || "0").toString().replace(/,/g, ""),
       10
     );
-
-    // After displaying profile data, request post stats
-    if (data.username) {
-      // Add spinner before fetching post stats
-      const spinnerHtml = '<div class="spinner"></div>';
-      engagementRateSpan.innerHTML = spinnerHtml;
-      averageLikesSpan.innerHTML = spinnerHtml;
-      averageCommentsSpan.innerHTML = spinnerHtml;
-      averageReelPlaysSpan.innerHTML = spinnerHtml;
-
-      chrome.runtime.sendMessage({ message: "get_post_stats", username: data.username });
-      chrome.runtime.sendMessage({ message: "get_reels_stats", username: data.username });
+    
+    if (cachedPostStats) {
+      displayPostStats(cachedPostStats);
     }
   }
 
 function displayPostStats(data) {
+  cachedPostStats = data;
   const POST_COUNT = 12;
   // Calculate averages
   let avgLikes = "N/A";
@@ -125,6 +118,13 @@ function displayPostStats(data) {
     let usageCount = result.usageCount || 0;
     const remaining = MAX_USAGE - usageCount;
     remainingCreditsSpan.textContent = remaining;
+
+    // Initialize spinners
+    const spinnerHtml = '<div class="spinner"></div>';
+    engagementRateSpan.innerHTML = spinnerHtml;
+    averageLikesSpan.innerHTML = spinnerHtml;
+    averageCommentsSpan.innerHTML = spinnerHtml;
+    averageReelPlaysSpan.innerHTML = spinnerHtml;
 
     // Now, send a message to the content script to get the URL.
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
