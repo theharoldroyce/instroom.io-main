@@ -1,26 +1,54 @@
-
 // content.js
+
+function waitForElement(selector, fallbackSelector) {
+  return new Promise(resolve => {
+    const mainElement = document.querySelector(selector);
+    if (mainElement) {
+      return resolve(mainElement);
+    }
+    if (fallbackSelector) {
+        const fallbackElement = document.querySelector(fallbackSelector);
+        if(fallbackElement) return resolve(fallbackElement);
+    }
+
+    const observer = new MutationObserver(mutations => {
+        const mainElement = document.querySelector(selector);
+        if (mainElement) {
+            resolve(mainElement);
+            observer.disconnect();
+        } else if (fallbackSelector) {
+            const fallbackElement = document.querySelector(fallbackSelector);
+            if(fallbackElement) {
+                resolve(fallbackElement);
+                observer.disconnect();
+            }
+        }
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  });
+}
+
+// Keep this listener for communication with the sidebar iframe
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.message === "get_profile_url") {
-      const profileUrl = window.location.href;
-      const profilePicUrl = getProfilePicUrlFromPage();
-      const userId = getUserIdFromPage();
-      chrome.runtime.sendMessage({
-        message: "profile_url",
-        url: profileUrl,
-        profilePicUrl: profilePicUrl,
-        userId: userId,
-      });
-    } else if (request.message === "toggle_sidebar") {
-      if (isProfilePage()) {
-        toggleSidebar();
-      } else {
-        closeSidebar();
-      }
-    } else if (request.message === "url_changed") {
-      if (!isProfilePage()) {
-        closeSidebar();
-      }
+      (async () => {
+        const profileUrl = window.location.href;
+        const profilePicUrl = await getProfilePicUrlFromPage();
+        const userId = getUserIdFromPage();
+        const username = getUsernameFromUrl();
+        chrome.runtime.sendMessage({
+          message: "profile_url",
+          url: profileUrl,
+          profilePicUrl: profilePicUrl,
+          userId: userId,
+          username: username,
+        });
+      })();
+      return true; // Indicates that the response is sent asynchronously
     }
   });
 
@@ -41,17 +69,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
   }
 
-  function toggleSidebar() {
+  function showSidebar() {
     const iframeId = "instroom-sidebar-frame";
-    const existingIframe = document.getElementById(iframeId);
+    let iframe = document.getElementById(iframeId);
 
-    if (existingIframe) {
-      existingIframe.remove();
+    if (iframe) {
+        // If it exists, reload it
+        iframe.contentWindow.location.reload();
     } else {
-      const iframe = document.createElement("iframe");
-      iframe.id = iframeId;
-      iframe.src = chrome.runtime.getURL("instroom.html");
-      iframe.style.cssText = `
+        // If it doesn't exist, create it
+        iframe = document.createElement("iframe");
+        iframe.id = iframeId;
+        iframe.src = chrome.runtime.getURL("instroom.html");
+        iframe.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
@@ -62,10 +92,45 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         border-radius: 16px;
         background: transparent;
       `;
-      document.body.appendChild(iframe);
+        document.body.appendChild(iframe);
     }
   }
-  
+
+  // This is the part that will automatically show/hide the sidebar
+  function handlePageChange() {
+    if (isProfilePage()) {
+      showSidebar();
+    } else {
+      closeSidebar();
+    }
+  }
+
+  // Run on initial load
+  handlePageChange();
+
+  // And run on URL changes
+  let lastUrl = location.href;
+  new MutationObserver(() => {
+    const url = location.href;
+    if (url !== lastUrl) {
+      lastUrl = url;
+      handlePageChange();
+    }
+  }).observe(document, { subtree: true, childList: true });
+
+
+  function getUsernameFromUrl() {
+    const path = window.location.pathname;
+    const segments = path.split('/').filter(segment => segment.length > 0);
+    if (segments.length === 1) {
+        const reservedWords = ['home', 'explore', 'reels', 'stories', 'p', 'tv', 'direct', 'accounts', 'developer', 'about', 'legal', 'create', 'saved', 'api'];
+        if (!reservedWords.includes(segments[0].toLowerCase())) {
+            return segments[0];
+        }
+    }
+    return null;
+  }
+
   function getUserIdFromPage() {
     try {
       const metaTag = document.querySelector('meta[property="al:ios:url"]');
@@ -86,7 +151,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const path = window.location.pathname;
     const segments = path.split('/').filter(segment => segment.length > 0);
     
-    if (segments.length === 0) return false; // Root path
+    if (segments.length !== 1) {
+      return false;
+    }
     
     const reservedWords = ['home', 'explore', 'reels', 'stories', 'p', 'tv', 'direct', 'accounts', 'developer', 'about', 'legal', 'create', 'saved', 'api'];
     
@@ -97,12 +164,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
-  function getProfilePicUrlFromPage() {
+  async function getProfilePicUrlFromPage() {
     try {
-      // This selector targets the main profile image on an Instagram profile page.
-      // It's more robust than a very specific path.
-      const imgElement = document.querySelector('main header img');
+      const imgElement = await waitForElement('img[data-testid="user-avatar"]', 'main header img');
       if (imgElement) {
+        // Sometimes the src is a 1x1 pixel or placeholder, wait a moment for the real src
+        await new Promise(resolve => setTimeout(resolve, 100));
         return imgElement.src;
       }
     } catch (e) {

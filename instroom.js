@@ -135,6 +135,22 @@ function displayPostStats(data) {
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.message === "profile_data") {
       displayProfileData(request.data);
+    } else if (request.message === "profile_url") {
+        const profilePicImg = document.getElementById("profile-pic");
+        const usernameSpan = document.getElementById("username");
+        
+        if (request.profilePicUrl) {
+            profilePicImg.src = request.profilePicUrl;
+        }
+        if (request.username) {
+            usernameSpan.textContent = request.username;
+        }
+
+        // Since we get some data, hide loading and show the profile section
+        if (request.profilePicUrl || request.username) {
+            loadingDiv.style.display = "none";
+            profileDataDiv.style.display = "block";
+        }
     } else if (request.message === "profile_data_error") {
       displayError(request.error);
     } else if (request.message === "post_stats_data") {
