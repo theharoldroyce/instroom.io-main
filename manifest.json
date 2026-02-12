@@ -14,7 +14,7 @@
       "https://instagram-social-api.p.rapidapi.com/*",
       "https://*.cdninstagram.com/*",
       "https://*.fbcdn.net/*",
-      "https://tiktok-api23.p.rapidapi.com/*"
+      "https://api.omar-thing.site/*"
     ],
     "action": {
       "default_icon": {

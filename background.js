@@ -4,7 +4,8 @@
 const RAPIDAPI_KEY = "afc08d77a3msha9dbce2c87bd4d4p1c4c64jsn5dacbf93e3eb"; // Replace with your actual RapidAPI key
 const RAPIDAPI_HOST = "instagram-social-api.p.rapidapi.com";
 
-const TIKTOK_API_HOST = "tiktok-api23.p.rapidapi.com"; 
+const TIKTOK_HOST = "https://api.omar-thing.site";
+const TIKTOK_KEY = "vS2LUxpdqGJX8agO";
 let currentUserId = null;
 
 // Listen for URL updates to handle navigation
@@ -60,13 +61,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { // Mak
         if (username) {
           if (profileUrl.includes("tiktok.com")) {
             fetchTikTokProfileData(username, request.profilePicUrl);
-            fetchTikTokPostStats(username);
-            // TikTok is all video, so we can map reels stats to the same data or a specific endpoint
-            fetchTikTokReelsStats(username);
           } else {
-            fetchProfileData(username, request.profilePicUrl); // Pass the direct image URL
-            fetchPostStats(username);
-            fetchReelsStats(username);
+            fetchInstagramProfileData(username, request.profilePicUrl); // Pass the direct image URL
+            fetchInstagramPostStats(username);
+            fetchInstagramReelsStats(username);
           }
         } else {
           console.error("Invalid profile URL:", profileUrl);
@@ -80,7 +78,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { // Mak
     return true; // Return true to indicate you will send a response asynchronously.
   } else if (request.message === "get_post_stats") {
     if (request.username) {
-      fetchPostStats(request.username);
+      fetchInstagramPostStats(request.username);
     } else {
       console.error("Username not available for post stats.");
       chrome.runtime.sendMessage({
@@ -91,7 +89,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { // Mak
     return true; // Also indicate async response for this message type.
   } else if (request.message === "get_reels_stats") {
     if (request.username) {
-      fetchReelsStats(request.username);
+      fetchInstagramReelsStats(request.username);
     } else {
       console.error("Username not available for reels stats.");
       chrome.runtime.sendMessage({
@@ -117,7 +115,7 @@ function extractUsernameFromUrl(profileUrl) {
   return null;
 }
 
-async function fetchProfileData(username, directProfilePicUrl) {
+async function fetchInstagramProfileData(username, directProfilePicUrl) {
   const infoUrl = `https://instagram-social-api.p.rapidapi.com/v1/info?username_or_id_or_url=${username}`;
   const aboutUrl = `https://instagram-social-api.p.rapidapi.com/v1/info_about?username_or_id_or_url=${username}`;
 
@@ -145,7 +143,7 @@ async function fetchProfileData(username, directProfilePicUrl) {
     const infoResult = await infoResponse.json();
     const aboutResult = await aboutResponse.json();
 
-    const profileData = extractProfileData(infoResult, aboutResult);
+    const profileData = extractInstagramProfileData(infoResult, aboutResult);
 
     // Prioritize the direct URL from the content script. Fallback to API URLs if it's not available.
     let finalProfilePicUrl = directProfilePicUrl;
@@ -182,7 +180,7 @@ async function fetchProfileData(username, directProfilePicUrl) {
   }
 }
 
-async function fetchPostStats(username) {
+async function fetchInstagramPostStats(username) {
   const url = `https://instagram-social-api.p.rapidapi.com/v1/posts?username_or_id_or_url=${username}`;
   const options = {
     method: "GET",
@@ -238,7 +236,7 @@ async function fetchPostStats(username) {
   }
 }
 
-async function fetchReelsStats(username) {
+async function fetchInstagramReelsStats(username) {
   const url = `https://instagram-social-api.p.rapidapi.com/v1/reels?username_or_id_or_url=${username}`;
   const options = {
     method: "GET",
@@ -310,7 +308,7 @@ async function fetchReelsStats(username) {
   }
 }
 
-function extractProfileData(infoData, aboutData) {
+function extractInstagramProfileData(infoData, aboutData) {
   if (infoData && infoData.data) {
     const data = infoData.data;
     let location = "N/A";
@@ -341,39 +339,76 @@ function extractProfileData(infoData, aboutData) {
 // --- TIKTOK FUNCTIONS ---
 
 async function fetchTikTokProfileData(username, directProfilePicUrl) {
-  const url = `https://${TIKTOK_API_HOST}/api/user/info?uniqueId=${username}`;
+  const profileUrl = `${TIKTOK_HOST}/?key=${TIKTOK_KEY}&username=${username}`;
+  const emailUrl = `${TIKTOK_HOST}/?key=${TIKTOK_KEY}&type=domain&username=${username}`;
   
   const options = {
     method: "GET",
-    headers: {
-      "x-rapidapi-key": RAPIDAPI_KEY,
-      "x-rapidapi-host": TIKTOK_API_HOST,
-    },
   };
 
   try {
-    const response = await fetch(url, options);
-    if (!response.ok) throw new Error(`TikTok API request failed: ${response.status}`);
-    
-    const result = await response.json();
-    const userInfo = result.userInfo;
-    const user = userInfo?.user;
-    const stats = userInfo?.stats;
+    const [profileResponse, emailResponse] = await Promise.all([
+      fetch(profileUrl, options),
+      fetch(emailUrl, options).catch((err) => {
+        console.error("TikTok email fetch error:", err);
+        return null;
+      }),
+    ]);
 
-    if (!user || !stats) throw new Error("Invalid TikTok API response structure");
+    if (!profileResponse.ok) throw new Error(`TikTok API request failed: ${profileResponse.status}`);
     
+    const result = await profileResponse.json();
+    console.log(result);
+    const profile = result.profile;
+    const stats = result.stats;
+
+    if (!profile || !stats) throw new Error("Invalid TikTok API response structure");
+    
+    let email = "N/A";
+    if (emailResponse && emailResponse.ok) {
+      try {
+        const emailResult = await emailResponse.json();
+        console.log("TikTok Email API Response:", emailResult);
+        if (emailResult.email) {
+          email = emailResult.email;
+        } else if (emailResult.data && emailResult.data.email) {
+          email = emailResult.data.email;
+        }
+      } catch (e) {
+        console.error("Error parsing TikTok email JSON:", e);
+      }
+    }
+
+    // Fallback: Extract email from bio if not found in API
+    if (email === "N/A" && profile.About) {
+      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+      const match = profile.About.match(emailRegex);
+      if (match) {
+        email = match[0];
+      }
+    }
+    console.log("Final TikTok Email:", email);
+
+    const rawFollowers = stats.Followers || stats.followers;
+    const followers = rawFollowers ? parseInt(String(rawFollowers).replace(/,/g, ""), 10) : 0;
+    const uniqueId = profile.Username ? profile.Username.replace(/^@/, "") : username;
+
     const profileData = {
-      username: user.uniqueId || username,
-      email: "N/A", // TikTok API rarely provides email
-      followers_count: stats.followerCount || 0,
-      location: "N/A",
-      engagement_rate: "Loading...",
-      profilePicUrl: directProfilePicUrl || user.avatarLarger || user.avatarMedium
+      username: uniqueId,
+      email: email,
+      followers_count: followers,
+      following_count: 0,
+      total_likes: 0,
+      total_videos: 0,
+      average_likes: 0,
+      location: profile.Country || "N/A",
+      engagement_rate: "N/A",
+      profilePicUrl: directProfilePicUrl || profile["Avatar URL"]
     };
 
     chrome.runtime.sendMessage({ 
       message: "profile_data", 
-      data: { ...profileData, profileUrl: `https://www.tiktok.com/@${username}` } 
+      data: { ...profileData, profileUrl: `https://www.tiktok.com/@${uniqueId}` } 
     });
 
   } catch (error) {
@@ -381,65 +416,3 @@ async function fetchTikTokProfileData(username, directProfilePicUrl) {
     chrome.runtime.sendMessage({ message: "profile_data_error", error: "Failed to fetch TikTok data." });
   }
 }
-
-async function fetchTikTokPostStats(username) {
-  const url = `https://${TIKTOK_API_HOST}/api/user/posts?uniqueId=${username}&count=12`;
-  const options = {
-    method: "GET",
-    headers: { "x-rapidapi-key": RAPIDAPI_KEY, "x-rapidapi-host": TIKTOK_API_HOST },
-  };
-
-  try {
-    const response = await fetch(url, options);
-    if (!response.ok) throw new Error(`TikTok Posts API failed: ${response.status}`);
-    const result = await response.json();
-
-    const posts = result.itemList || [];
-    const recentPosts = posts.slice(0, 12);
-
-    const totalLikes = recentPosts.reduce((sum, post) => sum + (post.stats?.diggCount || 0), 0);
-    const totalComments = recentPosts.reduce((sum, post) => sum + (post.stats?.commentCount || 0), 0);
-
-    chrome.runtime.sendMessage({
-      message: "post_stats_data",
-      data: { totalLikes, totalComments },
-    });
-  } catch (error) {
-    console.error("Error fetching TikTok posts:", error);
-    chrome.runtime.sendMessage({ message: "post_stats_error", error: "Failed to fetch TikTok stats." });
-  }
-}
-
-async function fetchTikTokReelsStats(username) {
-  // TikTok is video-first, so this might be redundant or use the same endpoint as posts
-  // We will calculate average views (plays) here
-  const url = `https://${TIKTOK_API_HOST}/api/user/posts?uniqueId=${username}&count=12`;
-  const options = {
-    method: "GET",
-    headers: { "x-rapidapi-key": RAPIDAPI_KEY, "x-rapidapi-host": TIKTOK_API_HOST },
-  };
-
-  try {
-    const response = await fetch(url, options);
-    if (!response.ok) throw new Error(`TikTok Reels API failed: ${response.status}`);
-    const result = await response.json();
-
-    const videos = result.itemList || [];
-    
-    // Filter logic similar to Instagram (remove pinned if possible, etc)
-    // For now, just take recent videos
-    const recentVideos = videos.slice(0, 12);
-    
-    const totalPlays = recentVideos.reduce((sum, video) => sum + (video.stats?.playCount || 0), 0);
-    const averagePlays = recentVideos.length > 0 ? (totalPlays / recentVideos.length) : 0;
-
-    chrome.runtime.sendMessage({ 
-      message: "reels_stats_data", 
-      data: { averagePlays: averagePlays.toFixed(0) } 
-    });
-  } catch (error) {
-    console.error("Error fetching TikTok views:", error);
-    chrome.runtime.sendMessage({ message: "reels_stats_error", error: "Failed to fetch TikTok views." });
-  }
-}
-// add to github

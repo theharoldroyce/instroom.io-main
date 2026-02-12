@@ -125,22 +125,33 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }).observe(document, { subtree: true, childList: true });
 
 
-  function getUsernameFromUrl() {
-    const hostname = window.location.hostname;
+  function getInstagramUsernameFromUrl() {
     const path = window.location.pathname;
     const segments = path.split('/').filter(segment => segment.length > 0);
+    if (segments.length === 1) {
+        const reservedWords = ['home', 'explore', 'reels', 'stories', 'p', 'tv', 'direct', 'accounts', 'developer', 'about', 'legal', 'create', 'saved', 'api', 'search'];
+        if (!reservedWords.includes(segments[0].toLowerCase())) {
+            return segments[0];
+        }
+    }
+    return null;
+  }
 
+  function getTikTokUsernameFromUrl() {
+    const path = window.location.pathname;
+    const segments = path.split('/').filter(segment => segment.length > 0);
+    if (segments.length > 0 && segments[0].startsWith('@')) {
+      return segments[0].substring(1); // Remove the '@'
+    }
+    return null;
+  }
+
+  function getUsernameFromUrl() {
+    const hostname = window.location.hostname;
     if (hostname.includes("instagram.com")) {
-      if (segments.length === 1) {
-          const reservedWords = ['home', 'explore', 'reels', 'stories', 'p', 'tv', 'direct', 'accounts', 'developer', 'about', 'legal', 'create', 'saved', 'api', 'search'];
-          if (!reservedWords.includes(segments[0].toLowerCase())) {
-              return segments[0];
-          }
-      }
+      return getInstagramUsernameFromUrl();
     } else if (hostname.includes("tiktok.com")) {
-      if (segments.length > 0 && segments[0].startsWith('@')) {
-        return segments[0].substring(1); // Remove the '@'
-      }
+      return getTikTokUsernameFromUrl();
     }
     return null;
   }
@@ -161,38 +172,35 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return null;
   }
 
+  function isInstagramProfilePage() {
+    const path = window.location.pathname;
+    const segments = path.split('/').filter(segment => segment.length > 0);
+    if (segments.length !== 1) return false;
+    
+    const reservedWords = ['home', 'explore', 'reels', 'stories', 'p', 'tv', 'direct', 'accounts', 'developer', 'about', 'legal', 'create', 'saved', 'api', 'search'];
+    if (reservedWords.includes(segments[0].toLowerCase())) return false;
+    
+    return true;
+  }
+
+  function isTikTokProfilePage() {
+    const path = window.location.pathname;
+    const segments = path.split('/').filter(segment => segment.length > 0);
+    // TikTok profiles are typically /@username (exactly 1 segment starting with @)
+    return segments.length === 1 && segments[0].startsWith('@');
+  }
+
   function isProfilePage() {
     const hostname = window.location.hostname;
-    const path = window.location.pathname;
-    
     if (hostname.includes("instagram.com")) {
-      const segments = path.split('/').filter(segment => segment.length > 0);
-      if (segments.length !== 1) return false;
-      
-      const reservedWords = ['home', 'explore', 'reels', 'stories', 'p', 'tv', 'direct', 'accounts', 'developer', 'about', 'legal', 'create', 'saved', 'api', 'search'];
-      if (reservedWords.includes(segments[0].toLowerCase())) return false;
-      
-      return true;
+      return isInstagramProfilePage();
     } else if (hostname.includes("tiktok.com")) {
-      const segments = path.split('/').filter(segment => segment.length > 0);
-      // TikTok profiles are typically /@username (exactly 1 segment starting with @)
-      return segments.length === 1 && segments[0].startsWith('@');
+      return isTikTokProfilePage();
     }
     return false;
   }
 
-  async function getProfilePicUrlFromPage() {
-    const hostname = window.location.hostname;
-    if (hostname.includes("tiktok.com")) {
-      try {
-        // Generic selector for TikTok avatar (often has class containing 'Avatar')
-        const imgElement = await waitForElement('img[class*="Avatar"]', 'span[shape="circle"] img');
-        if (imgElement) return imgElement.src;
-      } catch (e) {
-        console.error("Error extracting TikTok profile picture:", e);
-      }
-    }
-    
+  async function getInstagramProfilePicUrl() {
     try {
       const imgElement = await waitForElement('img[data-testid="user-avatar"]', 'main header img');
       if (imgElement) {
@@ -201,7 +209,28 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return imgElement.src;
       }
     } catch (e) {
-      console.error("Error extracting profile picture URL:", e);
+      console.error("Error extracting Instagram profile picture URL:", e);
+    }
+    return null;
+  }
+
+  async function getTikTokProfilePicUrl() {
+    try {
+      // Generic selector for TikTok avatar (often has class containing 'Avatar')
+      const imgElement = await waitForElement('img[class*="Avatar"]', 'span[shape="circle"] img');
+      if (imgElement) return imgElement.src;
+    } catch (e) {
+      console.error("Error extracting TikTok profile picture:", e);
+    }
+    return null;
+  }
+
+  async function getProfilePicUrlFromPage() {
+    const hostname = window.location.hostname;
+    if (hostname.includes("instagram.com")) {
+      return await getInstagramProfilePicUrl();
+    } else if (hostname.includes("tiktok.com")) {
+      return await getTikTokProfilePicUrl();
     }
     return null;
   }

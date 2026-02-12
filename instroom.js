@@ -34,37 +34,43 @@ document.addEventListener("DOMContentLoaded", () => {
     return (num / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';
   }
 
-  function displayProfileData(data) {
-    console.log("Full data object received in popup:", data);
-
-    loadingDiv.style.display = "none";
-    profileDataDiv.style.display = "block";
+  function displayCommonProfileData(data) {
     usernameSpan.textContent = data.username || "N/A";
     emailSpan.textContent = data.email || "N/A";
-    followersSpan.textContent = formatNumber(data.followers_count);
     locationSpan.textContent = data.location || "N/A";
-    engagementRateSpan.textContent = data.engagement_rate || "N/A";
-    
-    console.log("profilePicUrl in popup:", data.profilePicUrl);
+
     if (data.profilePicUrl) {
       profilePicImg.src = data.profilePicUrl;
     } else {
       profilePicImg.src = "images/instroomLogo.png"; // Fallback to default logo
     }
-  
-    // Store followers count for engagement rate calculation
-    profilePicImg.onerror = () => {
-      console.error("Failed to load image:", profilePicImg.src);
-    };
+  }
 
+  function displayInstagramData(data) {
+    displayCommonProfileData(data);
+    followersSpan.textContent = formatNumber(data.followers_count);
+    // engagementRateSpan is calculated later from post stats
+  
     followersCountForEngagement = parseInt(
       (data.followers_count || "0").toString().replace(/,/g, ""),
       10
     );
-    
+  
+    // If post stats came first, display them now
     if (cachedPostStats) {
       displayPostStats(cachedPostStats);
     }
+  }
+
+  function displayTikTokData(data) {
+    displayCommonProfileData(data);
+    followersSpan.textContent = formatNumber(data.followers_count);
+
+    // For TikTok, these stats are not available from our current API
+    engagementRateSpan.textContent = data.engagement_rate || "N/A";
+    averageLikesSpan.textContent = data.average_likes ? formatNumber(data.average_likes) : "N/A";
+    averageCommentsSpan.textContent = "N/A";
+    averageReelPlaysSpan.textContent = "N/A";
   }
 
 function displayPostStats(data) {
@@ -152,7 +158,20 @@ function displayPostStats(data) {
 
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.message === "profile_data") {
-      displayProfileData(request.data);
+      console.log("Full data object received in popup:", request.data);
+
+      loadingDiv.style.display = "none";
+      profileDataDiv.style.display = "block";
+
+      profilePicImg.onerror = () => {
+        console.error("Failed to load image:", profilePicImg.src);
+      };
+
+      if (request.data.profileUrl && request.data.profileUrl.includes("tiktok.com")) {
+        displayTikTokData(request.data);
+      } else {
+        displayInstagramData(request.data);
+      }
     } else if (request.message === "profile_url") {
         const profilePicImg = document.getElementById("profile-pic");
         const usernameSpan = document.getElementById("username");
